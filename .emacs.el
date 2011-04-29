@@ -10,27 +10,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (require 'color-theme)
-(color-theme-initialize)
 
 ;; Zenburn テーマ
 ;; http://www.emacswiki.org/emacs/ColorThemeZenburn
-(add-to-load-path "~/.emacs.d/zenburn-emacs")
+(add-to-load-path "~/.emacs.d/yasuhito/eszenburn-emacs")
 (require 'zenburn)
 (color-theme-zenburn)
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; フォントの設定
-;; http://tmcosmos.org/linux/ubuntu/ubuntu1004.html#dotemacs
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(if (and (eq window-system 'x) (>= emacs-major-version 23))
-    (progn
-      (set-default-font "DejaVu Sans Mono-11")
-      (set-fontset-font "fontset-default"
-			'japanese-jisx0208
-			'("M+1M+IPAG" . "unicode-bmp"))))
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
