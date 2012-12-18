@@ -8,4 +8,11 @@ do
 done
 
 
-ln -s $HOME/dotfiles/yasuhito.el $HOME/.emacs.d/yasuhito.el
+EMACS_FILES=( init.el yasuhito.el )
+
+for file in ${EMACS_FILES[@]}
+do
+    ln -s $HOME/dotfiles/$file $HOME/.emacs.d/$file
+done
+
+
