@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DOT_FILES=( .zshrc .zshrc.antigen .tmux.conf )
+DOT_FILES=( .zshrc .zshrc.antigen .tmux.conf .aspell.conf )
 
 for file in ${DOT_FILES[@]}
 do
