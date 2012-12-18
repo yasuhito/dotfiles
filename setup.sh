@@ -15,4 +15,3 @@ do
     ln -s $HOME/dotfiles/$file $HOME/.emacs.d/$file
 done
 
-
