@@ -5,6 +5,23 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PATH の設定
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; http://sakito.jp/emacs/emacsshell.html#path
+;; より下に記述した物が PATH の先頭に追加されます
+(dolist (dir (list
+              "/usr/local/bin"
+              (expand-file-name "~/bin")
+              ))
+  ;; PATH と exec-path に同じ物を追加します
+  (when ;; (and 
+         (file-exists-p dir) ;; (not (member dir exec-path)))
+    (setenv "PATH" (concat dir ":" (getenv "PATH")))
+    (setq exec-path (append (list dir) exec-path))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Solarized
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -89,4 +106,55 @@
 (global-set-key "\C-x\C-j" 'skk-mode)
 (global-set-key "\C-xj" 'skk-auto-fill-mode)
 (global-set-key "\C-xt" 'skk-tutorial)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Org-mode
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(setq org-directory "~/Dropbox/org/")
+
+
+;; キャプチャ関連
+(setq org-default-notes-file (concat org-directory "/notes.org"))
+(setq org-capture-templates
+      (quote
+       (("w"
+         "Default template"
+         entry
+         (file+headline "~/Dropbox/org/capture.org" "Captures")
+         "* %^{Title}\n\n  Source: %u, %c\n\n %i"
+         :empty-lines 1)
+        ("i"
+         "Idea"
+         entry
+         (file+headline nil "Idea")
+         "** %?\n %U\n %i\n %a\n %i\n")
+        ("t"
+         "Todo"
+         entry
+         (file+headline "~/org/gtd.org" "Tasks")
+         "* TODO %?\n  %i\n  %a")
+        ("j"
+         "Journal"
+         entry
+         (file+datetree "~/Dropbox/org/journal.org")
+         "* %?\nEntered on %U\n %i\n %a")
+        )))
+
+;; Chrome とかとの連携
+(server-start)
+(require 'org-protocol)
+
+(global-set-key "\C-cl" 'org-store-link)
+(global-set-key "\C-cc" 'org-capture)
+(global-set-key "\C-ca" 'org-agenda)
+(global-set-key "\C-cb" 'org-iswitchb)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; スペルチェッカー
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(setq ispell-program-name "aspell")
 
