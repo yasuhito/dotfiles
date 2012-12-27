@@ -7,7 +7,7 @@ do
 done
 
 
-EMACS_FILES=( init.el keybind.el mew.el org.el skk.el yasuhito.el )
+EMACS_FILES=( init.el keybind.el mew.el org.el skk.el )
 for file in ${EMACS_FILES[@]}
 do
     ln -s $HOME/dotfiles/$file $HOME/.emacs.d/personal/$file
