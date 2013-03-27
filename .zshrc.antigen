@@ -8,8 +8,19 @@ antigen-lib
 # Bundles from the default repo (robbyrussell's oh-my-zsh).
 antigen-bundle zsh-users/zsh-syntax-highlighting
 antigen-bundle git
-# antigen-bundle autojunp
-# antigen-bundle heroku
+antigen-bundle heroku
+antigen-bundle autojump
+antigen-bundle brew
+antigen-bundle bundler
+antigen-bundle coffee
+antigen-bundle command-not-found
+antigen-bundle gem
+antigen-bundle git-extras
+antigen-bundle git-flow
+antigen-bundle git-remote-branch
+antigen-bundle gnu-utils
+antigen-bundle osx
+antigen-bundle ruby
 
 
 # load the theme
