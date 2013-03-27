@@ -29,9 +29,15 @@ resolve_alias() {
 if ! is_tmux_running && shell_has_started_interactively; then
     if whence tmux >/dev/null 2>/dev/null; then
         real_tmux=$(resolve_alias "tmux")
-        $real_tmux attach || $real_tmux
+        $real_tmux attach || $real_tmux -f $HOME/.tmux.remote.conf
         break
     fi
+fi
+
+
+## change the color of tmux's status line
+if ! [ "$TMUX" = "" ]; then
+    tmux set-option status-bg $(perl -MList::Util=sum -e'print+(red,green,blue,yellow,cyan,magenta,white)[sum(unpack"C*",shift)%7]' $(hostname)) | cat > /dev/null
 fi
 
 
