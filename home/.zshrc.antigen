@@ -22,9 +22,11 @@ antigen-bundle gnu-utils
 antigen-bundle osx
 antigen-bundle ruby
 
+antigen-bundle zsh-users/zsh-syntax-highlighting
+antigen-bundle zsh-users/zsh-completions
 
 # load the theme
-antigen-theme agnoster
+antigen-theme eastwood
 
 
 # Tell antigen that you're done.
