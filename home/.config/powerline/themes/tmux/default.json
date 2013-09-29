@@ -1,0 +1,50 @@
+{
+    "default_module": "powerline.segments.common",
+    "segment_data": {
+	"external_ip": {
+	    "before": ""
+	},
+	"date": {
+	    "before": ""
+	},
+	"email_imap_alert": {
+	    "before": "M ",
+	    "args": {
+		"username": "yasuhito@gmail.com",
+		"password": "epvaayaoqfdmixzb"
+	    }
+	}
+    },
+    "segments": {
+	"right": [
+            {
+                "name": "email_imap_alert"
+            },
+	    {
+		"name": "system_load",
+		"priority": 50
+	    },
+            {
+                "name": "external_ip",
+                "priority": 50
+            },
+	    {
+		"name": "date",
+		"args": {
+		    "format": "%H:%M",
+		    "istime": true
+		}
+	    },
+	    {
+		"name": "date"
+	    },
+	    {
+		"name": "hostname",
+                "args": {
+                    "only_if_ssh": true,
+                    "exclude_domain": true
+                }
+	    }
+	]
+    }
+}
