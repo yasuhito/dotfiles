@@ -1,33 +1,38 @@
 source $HOME/play/antigen/antigen.zsh
 
-
 # Load the oh-my-zsh's library.
 antigen-use oh-my-zsh
 
-
 # Bundles from the default repo (robbyrussell's oh-my-zsh).
-antigen-bundle zsh-users/zsh-syntax-highlighting
-antigen-bundle git
-antigen-bundle heroku
 antigen-bundle autojump
 antigen-bundle brew
 antigen-bundle bundler
 antigen-bundle coffee
+antigen-bundle colored-man
+antigen-bundle colorize
 antigen-bundle command-not-found
+antigen-bundle debian
+antigen-bundle extract
 antigen-bundle gem
 antigen-bundle git-extras
 antigen-bundle git-flow
+antigen-bundle git-hubflow
 antigen-bundle git-remote-branch
+antigen-bundle gitfast
+antigen-bundle github
+antigen-bundle gitignore
 antigen-bundle gnu-utils
+antigen-bundle heroku
 antigen-bundle osx
+antigen-bundle rake
 antigen-bundle ruby
-
+antigen-bundle rvm
+antigen-bundle tmux
 antigen-bundle zsh-users/zsh-syntax-highlighting
 antigen-bundle zsh-users/zsh-completions
 
 # load the theme
 antigen-theme eastwood
-
 
 # Tell antigen that you're done.
 antigen-apply
