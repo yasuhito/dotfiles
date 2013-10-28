@@ -6,20 +6,10 @@
 	},
 	"date": {
 	    "before": ""
-	},
-	"email_imap_alert": {
-	    "before": "M ",
-	    "args": {
-		"username": "yasuhito@gmail.com",
-		"password": "epvaayaoqfdmixzb"
-	    }
 	}
     },
     "segments": {
 	"right": [
-            {
-                "name": "email_imap_alert"
-            },
 	    {
 		"name": "system_load",
 		"priority": 50
