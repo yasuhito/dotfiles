@@ -12,6 +12,10 @@
                       (nnimap-stream network)
                       (nnimap-authenticator login)))
 
+(add-to-list 'gnus-secondary-select-methods '(nntp "news.gwene.org"))
+(add-to-list 'gnus-secondary-select-methods '(nntp "news.gmane.org"))
+
+
 ;; メール送信の設定
 
 ;; with Emacs 23.1, you have to set this explicitly (in MS Windows)
