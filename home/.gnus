@@ -1,3 +1,6 @@
+;; Gnus を起動するときの gnutls.c の警告を出なくする
+(setq gnutls-min-prime-bits 1024)
+
 (setq gnus-select-method
       '(nnimap "Gmail"
                (nnimap-user "yasuhito@gmail.com")
