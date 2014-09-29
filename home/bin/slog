@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+
+$slogger = '~/Dropbox/play/Slogger/slogger'
+
+system "#{$slogger} -o twitterlogger -s"
+system "#{$slogger} -o pocketlogger -s"
+system "#{$slogger} -o githublogger -s"
