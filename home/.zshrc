@@ -7,11 +7,10 @@ export EDITOR=emacsclient
 ## Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
 
-## RVM
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm"
-PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
-
+# Antigen
 source $HOME/.zshrc.antigen
 
-# added by travis gem
+# Added by travis gem
 [ -f /Users/yasuhito/.travis/travis.sh ] && source /Users/yasuhito/.travis/travis.sh
+
+export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
