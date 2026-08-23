@@ -1,0 +1,10 @@
+[tools]
+claude = "latest"
+codex = "latest"
+gh = "latest"
+node = "latest"
+opencode = "latest"
+pi = "latest"
+pnpm = "9"
+typst = "0.14.2"
+uv = "latest"
