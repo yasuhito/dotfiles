@@ -25,6 +25,7 @@ mkdir -p "$test_home/.config/git"
 printf '%s\n' '[user]' > "$test_home/.config/git/local"
 
 "$repo_root/install.sh" "$test_home"
+assert_link "AGENTS.md"
 assert_link ".config/gh-dash/config.yml"
 assert_link ".config/git/config"
 assert_link ".config/mise/config.toml"
@@ -35,6 +36,7 @@ assert_link ".tmux.conf"
 
 # Applying an already-applied checkout must be a no-op and succeed.
 "$repo_root/install.sh" "$test_home"
+assert_link "AGENTS.md"
 assert_link ".config/git/config"
 
 # Links created by the documented former layout in this checkout are upgraded.
@@ -104,6 +106,21 @@ fi
   fail "installer made changes before reporting a conflict"
 grep -q 'refusing to overwrite' "$temporary_root/conflict.out" || \
   fail "installer did not explain the file conflict"
+
+# An existing global agent instruction file is preserved without partial changes.
+agents_conflict_home="$temporary_root/agents conflict home"
+mkdir -p "$agents_conflict_home"
+printf '%s\n' 'keep my instructions' > "$agents_conflict_home/AGENTS.md"
+if "$repo_root/install.sh" "$agents_conflict_home" > \
+  "$temporary_root/agents-conflict.out" 2>&1; then
+  fail "installation unexpectedly overwrote AGENTS.md"
+fi
+[ "$(cat "$agents_conflict_home/AGENTS.md")" = 'keep my instructions' ] || \
+  fail "existing AGENTS.md was changed"
+[ ! -e "$agents_conflict_home/.tmux.conf" ] || \
+  fail "installer made changes before reporting the AGENTS.md conflict"
+grep -q 'refusing to overwrite' "$temporary_root/agents-conflict.out" || \
+  fail "installer did not explain the AGENTS.md conflict"
 
 # Symlinked parents are unsafe even when their target is writable.
 outside_home="$temporary_root/outside selected home"
