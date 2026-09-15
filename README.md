@@ -1,16 +1,29 @@
 # dotfiles
 
-個人用の設定ファイルです。
+個人用の設定ファイルです。`home/` 以下は `$HOME` に配置する内容と同じ構成になっています。
 
 ## セットアップ
 
+新しく clone したリポジトリで、適用先のホームディレクトリを明示して次の 1 コマンドを実行します。
+
 ```bash
-mkdir -p ~/.config/{gh-dash,git,mise,tmux}
-ln -sfn ~/Work/dotfiles/.config/gh-dash/config.yml ~/.config/gh-dash/config.yml
-ln -sfn ~/Work/dotfiles/.config/git/config ~/.config/git/config
-ln -sfn ~/Work/dotfiles/.config/mise/config.toml ~/.config/mise/config.toml
-ln -sfn ~/Work/dotfiles/.config/tmux/tmux.conf ~/.config/tmux/tmux.conf
-ln -sfn ~/Work/dotfiles/.tmux.conf ~/.tmux.conf
+./install.sh "$HOME"
 ```
 
-`~/.config/git/local` はマシン固有のGit設定用です。このファイルはGit管理しません。
+`install.sh` は `home/` 内の Git 管理対象ファイルへのシンボリックリンクを作ります。同じコマンドは何度実行しても安全です。適用先に管理外のファイルや別のリンクがある場合は、何も変更せずエラーにします。別のホームディレクトリで試す場合も、たとえば `./install.sh "/tmp/test home"` のように適用先を引数で指定してください。
+
+## 以前のレイアウトからの移行
+
+以前のセットアップ手順で作った、このリポジトリ直下の `.config/` や `.tmux.conf` を指すリンクは `./install.sh "$HOME"` が新しい `home/` 内のリンクへ安全に更新します。
+
+適用先に自分で作った同名ファイルや別のリンクがある場合は自動では上書きしません。必要な内容を退避して競合を解消してから、コマンドを再実行してください。リポジトリ内の設定を編集するときは、今後は `home/` 以下を編集します。
+
+`~/.config/git/local` はマシン固有の Git 設定用です。このファイルは Git 管理せず、インストーラーも変更しません。
+
+## テスト
+
+実際のホームディレクトリには触れず、一時ディレクトリでインストールを検証できます。
+
+```bash
+./tests/install.test.sh
+```
