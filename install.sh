@@ -31,10 +31,88 @@ tracked_payloads() {
   git -C "$repo_root" ls-files -z -- home/
 }
 
+# Compare repository remotes without making checkout location or the common
+# GitHub SSH/HTTPS spelling part of the identity.
+normalize_remote() {
+  local remote_url="$1"
+  remote_url="${remote_url%/}"
+  remote_url="${remote_url%.git}"
+
+  case "$remote_url" in
+    http://*|https://*|ssh://*)
+      remote_url="${remote_url#*://}"
+      remote_url="${remote_url#*@}"
+      ;;
+    *@*:*)
+      remote_url="${remote_url#*@}"
+      remote_url="${remote_url/:/\/}"
+      ;;
+  esac
+
+  printf '%s\n' "$remote_url"
+}
+
+same_repository() {
+  local candidate_root="$1"
+  local candidate_git_root candidate_config candidate_url candidate_identity
+  local current_config current_url
+
+  candidate_git_root="$(git -C "$candidate_root" rev-parse --show-toplevel 2>/dev/null)" || return 1
+  candidate_git_root="$(cd "$candidate_git_root" && pwd -P)" || return 1
+  [ "$candidate_git_root" = "$candidate_root" ] || return 1
+
+  while IFS= read -r candidate_config; do
+    candidate_url="${candidate_config#* }"
+    candidate_identity="$(normalize_remote "$candidate_url")"
+    while IFS= read -r current_config; do
+      current_url="${current_config#* }"
+      if [ "$candidate_identity" = "$(normalize_remote "$current_url")" ]; then
+        return 0
+      fi
+    done < <(git -C "$repo_root" config --get-regexp '^remote\..*\.url$' || true)
+  done < <(git -C "$candidate_root" config --get-regexp '^remote\..*\.url$' || true)
+
+  return 1
+}
+
+# A managed link points at this checkout, or at the corresponding current or
+# former-layout path in another checkout of the same repository. The latter is
+# verified by Git remote identity rather than by a machine-specific path.
+is_managed_link() {
+  local destination="$1"
+  local relative_path="$2"
+  local link_target absolute_target repository_path candidate_root
+  [ -L "$destination" ] || return 1
+
+  link_target="$(readlink "$destination")"
+  if [ "$link_target" = "$payload_root/$relative_path" ]; then
+    return 0
+  fi
+
+  case "$link_target" in
+    /*) absolute_target="$link_target" ;;
+    *) absolute_target="$(dirname "$destination")/$link_target" ;;
+  esac
+
+  for repository_path in "home/$relative_path" "$relative_path"; do
+    case "$absolute_target" in
+      *"/$repository_path") candidate_root="${absolute_target%"/$repository_path"}" ;;
+      *) continue ;;
+    esac
+
+    [ -n "$candidate_root" ] || continue
+    candidate_root="$(cd "$candidate_root" 2>/dev/null && pwd -P)" || continue
+    if [ "$candidate_root" = "$repo_root" ] || same_repository "$candidate_root"; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 has_conflict=0
 while IFS= read -r -d '' tracked_path; do
   relative_path="${tracked_path#home/}"
-  source_path="$payload_root/$relative_path"
   destination="$target_home/$relative_path"
   parent="$(dirname "$destination")"
 
@@ -55,14 +133,7 @@ while IFS= read -r -d '' tracked_path; do
   done
 
   if [ -e "$destination" ] || [ -L "$destination" ]; then
-    if [ -L "$destination" ] && [ "$(readlink "$destination")" = "$source_path" ]; then
-      continue
-    fi
-
-    # Links made by the repository's former root-level layout are managed by
-    # this project and can be migrated safely.
-    legacy_source="$repo_root/$relative_path"
-    if [ -L "$destination" ] && [ "$(readlink "$destination")" = "$legacy_source" ]; then
+    if is_managed_link "$destination" "$relative_path"; then
       continue
     fi
 
@@ -86,7 +157,7 @@ while IFS= read -r -d '' tracked_path; do
     continue
   fi
   if [ -L "$destination" ]; then
-    rm "$destination" # A preflight-approved legacy managed link.
+    rm "$destination" # A preflight-approved managed link from a checkout.
   fi
   ln -s "$source_path" "$destination"
 done < <(tracked_payloads)
