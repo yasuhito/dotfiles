@@ -31,6 +31,12 @@ tracked_payloads() {
   git -C "$repo_root" ls-files -z -- home/
 }
 
+# Paths formerly installed by this repository. They are considered only for
+# removal and never become installation sources again.
+retired_payloads() {
+  printf '%s\0' '.tmux.conf' '.config/tmux/tmux.conf'
+}
+
 # Compare repository remotes without making checkout location or the common
 # GitHub SSH/HTTPS spelling part of the identity.
 normalize_remote() {
@@ -146,6 +152,27 @@ if [ "$has_conflict" -ne 0 ]; then
   echo "No changes were made." >&2
   exit 1
 fi
+
+# Retire only links that pass the same repository-identity check used for
+# migrations. Unsafe parents are ignored so cleanup can never escape the
+# explicitly selected home directory.
+while IFS= read -r -d '' relative_path; do
+  destination="$target_home/$relative_path"
+  parent="$(dirname "$destination")"
+  unsafe_parent=0
+
+  while [ "$parent" != "$target_home" ]; do
+    if [ -L "$parent" ] || { [ -e "$parent" ] && [ ! -d "$parent" ]; }; then
+      unsafe_parent=1
+      break
+    fi
+    parent="$(dirname "$parent")"
+  done
+
+  if [ "$unsafe_parent" -eq 0 ] && is_managed_link "$destination" "$relative_path"; then
+    rm "$destination"
+  fi
+done < <(retired_payloads)
 
 while IFS= read -r -d '' tracked_path; do
   relative_path="${tracked_path#home/}"

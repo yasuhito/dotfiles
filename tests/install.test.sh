@@ -11,45 +11,63 @@ fail() {
 }
 
 assert_link() {
-  relative_path="$1"
-  destination="$test_home/$relative_path"
-  expected="$repo_root/home/$relative_path"
+  local relative_path="$1"
+  local destination="$test_home/$relative_path"
+  local expected="$repo_root/home/$relative_path"
   [ -L "$destination" ] || fail "$destination is not a symlink"
   [ "$(readlink "$destination")" = "$expected" ] || \
     fail "$destination does not point to $expected"
 }
 
-# A fresh installation supports spaces and preserves machine-local files.
+assert_no_path() {
+  local path="$1"
+  if [ -e "$path" ] || [ -L "$path" ]; then
+    fail "$path unexpectedly exists"
+  fi
+}
+
+assert_installed_payload() {
+  assert_link "AGENTS.md"
+  assert_link ".config/gh-dash/config.yml"
+  assert_link ".config/git/config"
+  assert_link ".config/mise/config.toml"
+}
+
+# A fresh installation supports spaces, preserves machine-local files, and
+# does not install either retired tmux payload.
 test_home="$temporary_root/home with spaces"
 mkdir -p "$test_home/.config/git"
 printf '%s\n' '[user]' > "$test_home/.config/git/local"
 
 "$repo_root/install.sh" "$test_home"
-assert_link "AGENTS.md"
-assert_link ".config/gh-dash/config.yml"
-assert_link ".config/git/config"
-assert_link ".config/mise/config.toml"
-assert_link ".config/tmux/tmux.conf"
-assert_link ".tmux.conf"
+assert_installed_payload
+assert_no_path "$test_home/.tmux.conf"
+assert_no_path "$test_home/.config/tmux/tmux.conf"
 [ "$(cat "$test_home/.config/git/local")" = '[user]' ] || \
   fail "machine-local Git configuration was changed"
 
 # Applying an already-applied checkout must be a no-op and succeed.
 "$repo_root/install.sh" "$test_home"
-assert_link "AGENTS.md"
-assert_link ".config/git/config"
+assert_installed_payload
+assert_no_path "$test_home/.tmux.conf"
+assert_no_path "$test_home/.config/tmux/tmux.conf"
 
-# Links created by the documented former layout in this checkout are upgraded.
-legacy_home="$temporary_root/legacy home"
-mkdir -p "$legacy_home"
-ln -s "$repo_root/.tmux.conf" "$legacy_home/.tmux.conf"
-"$repo_root/install.sh" "$legacy_home"
-[ "$(readlink "$legacy_home/.tmux.conf")" = "$repo_root/home/.tmux.conf" ] || \
-  fail "legacy managed link from this checkout was not migrated"
+# Links to both retired payloads from this checkout are removed.
+test_home="$temporary_root/retired links home"
+mkdir -p "$test_home/.config/tmux"
+ln -s "$repo_root/home/.tmux.conf" "$test_home/.tmux.conf"
+ln -s "$repo_root/home/.config/tmux/tmux.conf" \
+  "$test_home/.config/tmux/tmux.conf"
+"$repo_root/install.sh" "$test_home"
+assert_installed_payload
+assert_no_path "$test_home/.tmux.conf"
+assert_no_path "$test_home/.config/tmux/tmux.conf"
 
-# A legacy link remains managed when it came from a different clone location.
+# A link remains managed when it came from a different verified checkout.
 old_checkout="$temporary_root/former checkout with spaces"
-mkdir -p "$old_checkout/.config/git"
+mkdir -p "$old_checkout/home/.config/tmux" "$old_checkout/.config/git"
+printf '%s\n' 'retired' > "$old_checkout/home/.tmux.conf"
+printf '%s\n' 'retired' > "$old_checkout/home/.config/tmux/tmux.conf"
 printf '%s\n' '[include]' > "$old_checkout/.config/git/config"
 git -C "$old_checkout" init -q
 origin_url="$(git -C "$repo_root" config --get remote.origin.url)"
@@ -57,18 +75,59 @@ origin_url="$(git -C "$repo_root" config --get remote.origin.url)"
 git -C "$old_checkout" remote add origin "$origin_url"
 
 other_checkout_home="$temporary_root/other checkout home"
-mkdir -p "$other_checkout_home/.config/git"
-ln -s "$old_checkout/.config/git/config" "$other_checkout_home/.config/git/config"
-"$repo_root/install.sh" "$other_checkout_home"
-[ "$(readlink "$other_checkout_home/.config/git/config")" = \
-  "$repo_root/home/.config/git/config" ] || \
-  fail "legacy managed link from another checkout was not migrated"
-"$repo_root/install.sh" "$other_checkout_home"
-[ "$(readlink "$other_checkout_home/.config/git/config")" = \
-  "$repo_root/home/.config/git/config" ] || \
-  fail "migrated installation was not idempotent"
+mkdir -p "$other_checkout_home/.config/git" "$other_checkout_home/.config/tmux"
+ln -s "$old_checkout/.config/git/config" \
+  "$other_checkout_home/.config/git/config"
+ln -s "$old_checkout/home/.tmux.conf" "$other_checkout_home/.tmux.conf"
+ln -s "$old_checkout/home/.config/tmux/tmux.conf" \
+  "$other_checkout_home/.config/tmux/tmux.conf"
+test_home="$other_checkout_home"
+"$repo_root/install.sh" "$test_home"
+assert_installed_payload
+assert_no_path "$test_home/.tmux.conf"
+assert_no_path "$test_home/.config/tmux/tmux.conf"
+"$repo_root/install.sh" "$test_home"
+assert_installed_payload
 
-# A same-shaped link without matching repository identity is unrelated.
+# Unrelated regular files, links, and directories at retired paths are not
+# owned by the installer and must remain untouched.
+test_home="$temporary_root/unrelated retired regular home"
+mkdir -p "$test_home/.config/tmux"
+printf '%s\n' 'keep me' > "$test_home/.tmux.conf"
+printf '%s\n' 'foreign' > "$temporary_root/foreign tmux.conf"
+ln -s "$temporary_root/foreign tmux.conf" "$test_home/.config/tmux/tmux.conf"
+"$repo_root/install.sh" "$test_home"
+assert_installed_payload
+[ "$(cat "$test_home/.tmux.conf")" = 'keep me' ] || \
+  fail "unrelated regular file at retired path was changed"
+[ "$(readlink "$test_home/.config/tmux/tmux.conf")" = \
+  "$temporary_root/foreign tmux.conf" ] || \
+  fail "unrelated symlink at retired path was changed"
+
+test_home="$temporary_root/unrelated retired directory home"
+mkdir -p "$test_home/.tmux.conf" "$test_home/.config/tmux/tmux.conf"
+"$repo_root/install.sh" "$test_home"
+assert_installed_payload
+[ -d "$test_home/.tmux.conf" ] || fail "directory at retired path was changed"
+[ -d "$test_home/.config/tmux/tmux.conf" ] || \
+  fail "nested directory at retired path was changed"
+
+# A same-shaped retired link without matching repository identity is
+# ambiguous and therefore remains untouched.
+ambiguous_checkout="$temporary_root/ambiguous checkout"
+mkdir -p "$ambiguous_checkout/home"
+printf '%s\n' 'ambiguous' > "$ambiguous_checkout/home/.tmux.conf"
+git -C "$ambiguous_checkout" init -q
+test_home="$temporary_root/ambiguous retired link home"
+mkdir -p "$test_home"
+ln -s "$ambiguous_checkout/home/.tmux.conf" "$test_home/.tmux.conf"
+"$repo_root/install.sh" "$test_home"
+assert_installed_payload
+[ "$(readlink "$test_home/.tmux.conf")" = \
+  "$ambiguous_checkout/home/.tmux.conf" ] || \
+  fail "ambiguous retired symlink was changed"
+
+# A same-shaped active link without matching repository identity is unrelated.
 foreign_checkout="$temporary_root/unrelated checkout"
 mkdir -p "$foreign_checkout/.config/git"
 printf '%s\n' 'foreign' > "$foreign_checkout/.config/git/config"
@@ -84,15 +143,16 @@ fi
 [ "$(readlink "$foreign_home/.config/git/config")" = \
   "$foreign_checkout/.config/git/config" ] || \
   fail "unrelated symlink was changed"
-[ ! -e "$foreign_home/.tmux.conf" ] || \
+[ ! -e "$foreign_home/.config/gh-dash/config.yml" ] || \
   fail "installer made changes before reporting an unrelated symlink"
 grep -q 'refusing to overwrite' "$temporary_root/foreign.out" || \
   fail "installer did not explain the unrelated symlink conflict"
 
-# A conflict must be detected during preflight, before any managed link moves.
+# A conflict must be detected during preflight, before a managed retired link
+# is removed or any new link is installed.
 conflict_home="$temporary_root/conflicting home"
 mkdir -p "$conflict_home/.config/git"
-managed_link_before="$repo_root/.tmux.conf"
+managed_link_before="$repo_root/home/.tmux.conf"
 ln -s "$managed_link_before" "$conflict_home/.tmux.conf"
 printf '%s\n' 'keep me' > "$conflict_home/.config/git/config"
 if "$repo_root/install.sh" "$conflict_home" > "$temporary_root/conflict.out" 2>&1; then
@@ -101,7 +161,7 @@ fi
 [ "$(cat "$conflict_home/.config/git/config")" = 'keep me' ] || \
   fail "conflicting file was changed"
 [ "$(readlink "$conflict_home/.tmux.conf")" = "$managed_link_before" ] || \
-  fail "managed link was migrated before another conflict was reported"
+  fail "managed retired link was removed before a conflict was reported"
 [ ! -e "$conflict_home/.config/gh-dash/config.yml" ] || \
   fail "installer made changes before reporting a conflict"
 grep -q 'refusing to overwrite' "$temporary_root/conflict.out" || \
@@ -117,7 +177,7 @@ if "$repo_root/install.sh" "$agents_conflict_home" > \
 fi
 [ "$(cat "$agents_conflict_home/AGENTS.md")" = 'keep my instructions' ] || \
   fail "existing AGENTS.md was changed"
-[ ! -e "$agents_conflict_home/.tmux.conf" ] || \
+[ ! -e "$agents_conflict_home/.config/gh-dash/config.yml" ] || \
   fail "installer made changes before reporting the AGENTS.md conflict"
 grep -q 'refusing to overwrite' "$temporary_root/agents-conflict.out" || \
   fail "installer did not explain the AGENTS.md conflict"
