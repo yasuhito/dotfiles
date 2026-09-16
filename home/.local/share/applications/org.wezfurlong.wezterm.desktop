@@ -1,0 +1,15 @@
+[Desktop Entry]
+Name=WezTerm
+Comment=A GPU-accelerated cross-platform terminal emulator and multiplexer
+Icon=org.wezfurlong.wezterm
+Type=Application
+TryExec=wezterm
+Exec=wezterm-xdg-terminal-exec
+Terminal=false
+Categories=System;TerminalEmulator;
+Keywords=shell;prompt;command;commandline;cmd;
+StartupWMClass=org.wezfurlong.wezterm
+X-TerminalArgExec=--
+X-TerminalArgAppId=--class
+X-TerminalArgTitle=--title
+X-TerminalArgDir=--cwd
