@@ -25,7 +25,7 @@ Hyprland 設定には、フォーカス中のウィンドウを示す赤い枠�
 
 `~/.config/ghostty/config` ではフォント、ウィンドウ、カーソル、キーバインド、スクロール、Hyprland 向けバックエンドを管理します。Omarchy の動的テーマは、存在する場合だけ `~/.local/state/omarchy/current/theme/ghostty.conf` から読み込みます。
 
-元のローカル設定が参照していた `shaders/cursor_warp.glsl` と `shaders/ripple_cursor.glsl` は別リポジトリ由来で、この dotfiles の管理対象ではなかったため、公開環境で欠落ファイルを参照しないよう `custom-shader` の 2 行だけを除外しました。これが移植性のために行った唯一の修正です。
+元のローカル設定が参照していた `shaders/cursor_warp.glsl` と `shaders/ripple_cursor.glsl` は別リポジトリ由来で、この dotfiles の管理対象ではなかったため、公開環境で欠落ファイルを参照しないよう `custom-shader` の 2 行を除外しました。また、後続の `shift+enter=text:\n` に上書きされて効いていなかった Shift+Enter の CSI-u keybind とそのコメントも削除しました。どちらも実際の動作は変えていません。
 
 既存の管理外 `~/.config/ghostty/config` は自動で上書きしません。実環境を移行するときは、先に既存ファイルをバックアップしてから競合を解消し、`./install.sh "$HOME"` を改めて実行してください。
 
