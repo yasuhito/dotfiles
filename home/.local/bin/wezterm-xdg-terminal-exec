@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+class=""
+cwd=""
+title=""
+
+while (($#)); do
+  case "$1" in
+    --class)
+      [ "$#" -ge 2 ] || { echo "wezterm-xdg-terminal-exec: --class requires a value" >&2; exit 2; }
+      class="$2"
+      shift 2
+      ;;
+    --class=*)
+      class="${1#--class=}"
+      shift
+      ;;
+    --cwd)
+      [ "$#" -ge 2 ] || { echo "wezterm-xdg-terminal-exec: --cwd requires a value" >&2; exit 2; }
+      cwd="$2"
+      shift 2
+      ;;
+    --cwd=*)
+      cwd="${1#--cwd=}"
+      shift
+      ;;
+    --title)
+      [ "$#" -ge 2 ] || { echo "wezterm-xdg-terminal-exec: --title requires a value" >&2; exit 2; }
+      title="$2"
+      shift 2
+      ;;
+    --title=*)
+      title="${1#--title=}"
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      echo "wezterm-xdg-terminal-exec: unsupported option: $1" >&2
+      exit 2
+      ;;
+  esac
+done
+
+wezterm_args=(start)
+[ -z "$class" ] || wezterm_args+=(--class "$class")
+[ -z "$cwd" ] || wezterm_args+=(--cwd "$cwd")
+
+if [ -n "$title" ]; then
+  # WezTerm has no start-time title option. Set it through the standard OSC 0
+  # sequence before replacing this helper shell with the requested command.
+  # shellcheck disable=SC2016 # Expansion belongs to the child shell.
+  title_script='printf "\033]0;%s\033\\" "$1"; shift; if (($#)); then exec "$@"; else exec "${SHELL:-/bin/sh}" -l; fi'
+  wezterm_args+=(-- sh -c "$title_script" wezterm-xdg-terminal-exec "$title" "$@")
+elif (($#)); then
+  wezterm_args+=(-- "$@")
+fi
+
+exec wezterm "${wezterm_args[@]}"

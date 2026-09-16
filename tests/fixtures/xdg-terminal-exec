@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# Minimal Default Terminal Specification fixture for isolated integration tests.
+# It intentionally implements only the selection and argument metadata exercised
+# by this repository's desktop entry.
+set -euo pipefail
+
+config_home="${XDG_CONFIG_HOME:-${HOME:?}/.config}"
+data_home="${XDG_DATA_HOME:-${HOME:?}/.local/share}"
+data_dirs="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+config="$config_home/xdg-terminals.list"
+
+selected_id=""
+selected_entry=""
+IFS=':' read -r -a search_dirs <<< "$data_home:$data_dirs"
+while IFS= read -r desktop_id || [ -n "$desktop_id" ]; do
+  case "$desktop_id" in
+    ''|'#'*) continue ;;
+  esac
+
+  for data_dir in "${search_dirs[@]}"; do
+    candidate="$data_dir/applications/$desktop_id"
+    if [ -f "$candidate" ]; then
+      selected_id="$desktop_id"
+      selected_entry="$candidate"
+      break 2
+    fi
+  done
+done < "$config"
+
+[ -n "$selected_entry" ] || { echo 'xdg-terminal-exec fixture: no terminal found' >&2; exit 1; }
+
+exec_value=""
+try_exec=""
+exec_arg=""
+app_id_arg=""
+title_arg=""
+dir_arg=""
+while IFS='=' read -r key value; do
+  case "$key" in
+    Exec) exec_value="$value" ;;
+    TryExec) try_exec="$value" ;;
+    X-TerminalArgExec) exec_arg="$value" ;;
+    X-TerminalArgAppId) app_id_arg="$value" ;;
+    X-TerminalArgTitle) title_arg="$value" ;;
+    X-TerminalArgDir) dir_arg="$value" ;;
+  esac
+done < "$selected_entry"
+
+[ -z "$try_exec" ] || command -v "$try_exec" > /dev/null
+[ -n "$exec_value" ] || { echo 'xdg-terminal-exec fixture: desktop entry has no Exec' >&2; exit 1; }
+case "$exec_value" in
+  *' '*) echo 'xdg-terminal-exec fixture: only a single-word Exec is supported' >&2; exit 1 ;;
+esac
+
+print_id=false
+print_cmd=false
+app_id=""
+title=""
+dir=""
+while (($#)); do
+  case "$1" in
+    --print-id) print_id=true; shift ;;
+    --print-cmd) print_cmd=true; shift ;;
+    --app-id=*) app_id="${1#--app-id=}"; shift ;;
+    --title=*) title="${1#--title=}"; shift ;;
+    --dir=*) dir="${1#--dir=}"; shift ;;
+    -e|--) shift; break ;;
+    *) break ;;
+  esac
+done
+
+if "$print_id"; then
+  printf '%s\n' "$selected_id"
+  "$print_cmd" || exit 0
+fi
+
+argv=("$@")
+if ((${#argv[@]})) && [ -n "$exec_arg" ]; then
+  argv=("$exec_arg" "${argv[@]}")
+fi
+prepend_metadata() {
+  local option="$1"
+  local value="$2"
+  [ -n "$option" ] && [ -n "$value" ] || return 0
+  case "$option" in
+    *=) argv=("${option}${value}" "${argv[@]}") ;;
+    *) argv=("$option" "$value" "${argv[@]}") ;;
+  esac
+}
+prepend_metadata "$dir_arg" "$dir"
+prepend_metadata "$title_arg" "$title"
+prepend_metadata "$app_id_arg" "$app_id"
+argv=("$exec_value" "${argv[@]}")
+
+if "$print_cmd"; then
+  printf '%s\n' "${argv[@]}"
+  exit 0
+fi
+
+exec "${argv[@]}"

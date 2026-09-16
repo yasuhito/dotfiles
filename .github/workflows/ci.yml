@@ -16,4 +16,7 @@ jobs:
       - name: Run installer tests
         run: ./tests/install.test.sh
       - name: Run ShellCheck
-        run: shellcheck install.sh tests/install.test.sh
+        run: >-
+          shellcheck install.sh tests/install.test.sh
+          tests/fixtures/xdg-terminal-exec
+          home/.local/bin/wezterm-xdg-terminal-exec

@@ -39,6 +39,9 @@ assert_installed_payload() {
   assert_link ".config/hypr/windows.lua"
   assert_link ".config/mise/config.toml"
   assert_link ".config/wezterm/wezterm.lua"
+  assert_link ".config/xdg-terminals.list"
+  assert_link ".local/bin/wezterm-xdg-terminal-exec"
+  assert_link ".local/share/applications/org.wezfurlong.wezterm.desktop"
 }
 
 # A fresh installation supports spaces, preserves machine-local files, and
@@ -59,6 +62,59 @@ assert_no_path "$test_home/.config/tmux/tmux.conf"
 assert_installed_payload
 assert_no_path "$test_home/.tmux.conf"
 assert_no_path "$test_home/.config/tmux/tmux.conf"
+
+# In an isolated XDG environment, the installed preference and desktop entry
+# select WezTerm and preserve every argument used by Omarchy. The fake binary
+# records the wrapper's final argv, so no GUI is opened.
+fake_bin="$temporary_root/fake bin"
+mkdir -p "$fake_bin"
+cat > "$fake_bin/wezterm" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$@"
+EOF
+chmod +x "$fake_bin/wezterm"
+xdg_env=(
+  env
+  "HOME=$test_home"
+  "XDG_CONFIG_HOME=$test_home/.config"
+  "XDG_DATA_HOME=$test_home/.local/share"
+  "XDG_DATA_DIRS=$temporary_root/empty-data"
+  "XDG_CACHE_HOME=$temporary_root/cache"
+  "PATH=$repo_root/tests/fixtures:$fake_bin:$test_home/.local/bin:/usr/bin:/bin"
+)
+mkdir -p "$temporary_root/empty-data" "$temporary_root/cache"
+selected_terminal="$("${xdg_env[@]}" xdg-terminal-exec --print-id)"
+[ "$selected_terminal" = 'org.wezfurlong.wezterm.desktop' ] || \
+  fail "xdg-terminal-exec selected $selected_terminal instead of WezTerm"
+
+printed_command="$("${xdg_env[@]}" xdg-terminal-exec --print-cmd \
+  --dir='/tmp/project with spaces' --app-id=TUI.float --title='Test title' \
+  -e printf '%s' 'command argument')"
+expected_command="$(printf '%s\n' \
+  wezterm-xdg-terminal-exec \
+  --class TUI.float \
+  --title 'Test title' \
+  --cwd '/tmp/project with spaces' \
+  -- printf '%s' 'command argument')"
+[ "$printed_command" = "$expected_command" ] || \
+  fail "xdg-terminal-exec did not preserve WezTerm launch arguments"
+
+wrapped_command="$(PATH="$fake_bin:/usr/bin:/bin" \
+  "$test_home/.local/bin/wezterm-xdg-terminal-exec" \
+  --class TUI.float --title 'Test title' --cwd '/tmp/project with spaces' \
+  -- printf '%s' 'command argument')"
+# shellcheck disable=SC2016 # Expansion belongs to the wrapper's child shell.
+title_script='printf "\033]0;%s\033\\" "$1"; shift; if (($#)); then exec "$@"; else exec "${SHELL:-/bin/sh}" -l; fi'
+expected_wrapped="$(printf '%s\n' \
+  start --class TUI.float --cwd '/tmp/project with spaces' \
+  -- sh -c "$title_script" wezterm-xdg-terminal-exec 'Test title' \
+  printf '%s' 'command argument')"
+[ "$wrapped_command" = "$expected_wrapped" ] || \
+  fail "WezTerm wrapper did not preserve class, title, directory, and command"
+
+normal_launch="$(PATH="$fake_bin:/usr/bin:/bin" \
+  "$test_home/.local/bin/wezterm-xdg-terminal-exec")"
+[ "$normal_launch" = 'start' ] || fail "normal WezTerm launch has unexpected arguments"
 
 # Links to both retired payloads from this checkout are removed.
 test_home="$temporary_root/retired links home"
