@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Minimal Default Terminal Specification fixture for isolated integration tests.
 # It intentionally implements only the selection and argument metadata exercised
-# by this repository's desktop entry.
+# by the desktop entries these tests install or define, including the trailing
+# "=" form that joins an option and its value into one argument.
 set -euo pipefail
 
 config_home="${XDG_CONFIG_HOME:-${HOME:?}/.config}"
