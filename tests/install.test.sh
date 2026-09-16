@@ -30,6 +30,7 @@ assert_installed_payload() {
   assert_link "AGENTS.md"
   assert_link ".config/gh-dash/config.yml"
   assert_link ".config/git/config"
+  assert_link ".config/ghostty/config"
   assert_link ".config/hypr/autostart.lua"
   assert_link ".config/hypr/bindings.lua"
   assert_link ".config/hypr/hyprland.lua"
@@ -248,6 +249,23 @@ fi
   fail "installer made changes before reporting a conflict"
 grep -q 'refusing to overwrite' "$temporary_root/conflict.out" || \
   fail "installer did not explain the file conflict"
+
+# An unmanaged Ghostty configuration blocks the entire installation and is
+# preserved unchanged.
+ghostty_conflict_home="$temporary_root/ghostty conflict home"
+mkdir -p "$ghostty_conflict_home/.config/ghostty"
+printf '%s\n' 'keep my Ghostty config' > \
+  "$ghostty_conflict_home/.config/ghostty/config"
+if "$repo_root/install.sh" "$ghostty_conflict_home" > \
+  "$temporary_root/ghostty-conflict.out" 2>&1; then
+  fail "installation unexpectedly overwrote the Ghostty configuration"
+fi
+[ "$(cat "$ghostty_conflict_home/.config/ghostty/config")" = \
+  'keep my Ghostty config' ] || fail "existing Ghostty configuration was changed"
+[ ! -e "$ghostty_conflict_home/.config/gh-dash/config.yml" ] || \
+  fail "installer made changes before reporting the Ghostty conflict"
+grep -q 'refusing to overwrite' "$temporary_root/ghostty-conflict.out" || \
+  fail "installer did not explain the Ghostty conflict"
 
 # A conflict in a new payload is detected before any other new payload is installed.
 new_payload_conflict_home="$temporary_root/new payload conflict home"

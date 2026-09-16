@@ -6,7 +6,7 @@
 
 - Git、gh-dash、mise
 - Omarchy のデフォルトを読み込む Hyprland Lua 設定と個人用 override 一式
-- WezTerm と、Omarchy のデフォルトターミナルを Ghostty にする設定
+- Ghostty と WezTerm、および Omarchy のデフォルトターミナルを Ghostty にする設定
 - エージェント向けの共通指示
 
 Hyprland 設定には、フォーカス中のウィンドウを示す赤い枠線と、非アクティブなウィンドウを暗くする設定が含まれます。Omarchy が提供する Lua モジュールを前提とし、モニター固有の EDID やバックアップ、生成された設定は収録していません。
@@ -19,7 +19,15 @@ Hyprland 設定には、フォーカス中のウィンドウを示す赤い枠�
 ./install.sh "$HOME"
 ```
 
-`install.sh` は `home/` 内の Git 管理対象ファイルへのシンボリックリンクを作ります。Hyprland と WezTerm の設定もそれぞれ `~/.config/hypr/` と `~/.config/wezterm/` に配置されます。同じコマンドは何度実行しても安全です。同じ Git リポジトリの別 checkout を指す既存リンクは、現在の checkout を指すように更新します。適用先に管理外のファイルや別リポジトリのリンクがある場合は、どの設定も変更せずエラーにします。別のホームディレクトリで試す場合も、たとえば `./install.sh "/tmp/test home"` のように適用先を引数で指定してください。
+`install.sh` は `home/` 内の Git 管理対象ファイルへのシンボリックリンクを作ります。Ghostty、Hyprland、WezTerm の設定もそれぞれ `~/.config/ghostty/`、`~/.config/hypr/`、`~/.config/wezterm/` に配置されます。同じコマンドは何度実行しても安全です。同じ Git リポジトリの別 checkout を指す既存リンクは、現在の checkout を指すように更新します。適用先に管理外のファイルや別リポジトリのリンクがある場合は、どの設定も変更せずエラーにします。別のホームディレクトリで試す場合も、たとえば `./install.sh "/tmp/test home"` のように適用先を引数で指定してください。
+
+## Ghostty
+
+`~/.config/ghostty/config` ではフォント、ウィンドウ、カーソル、キーバインド、スクロール、Hyprland 向けバックエンドを管理します。Omarchy の動的テーマは、存在する場合だけ `~/.local/state/omarchy/current/theme/ghostty.conf` から読み込みます。
+
+元のローカル設定が参照していた `shaders/cursor_warp.glsl` と `shaders/ripple_cursor.glsl` は別リポジトリ由来で、この dotfiles の管理対象ではなかったため、公開環境で欠落ファイルを参照しないよう `custom-shader` の 2 行だけを除外しました。これが移植性のために行った唯一の修正です。
+
+既存の管理外 `~/.config/ghostty/config` は自動で上書きしません。実環境を移行するときは、先に既存ファイルをバックアップしてから競合を解消し、`./install.sh "$HOME"` を改めて実行してください。
 
 ## Omarchy のデフォルトターミナル
 
