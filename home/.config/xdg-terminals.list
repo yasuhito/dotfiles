@@ -1,2 +1,2 @@
 # Preferred terminal for xdg-terminal-exec (used by Omarchy 4.x).
-org.wezfurlong.wezterm.desktop
+com.mitchellh.ghostty.desktop
