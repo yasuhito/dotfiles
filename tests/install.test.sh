@@ -30,7 +30,15 @@ assert_installed_payload() {
   assert_link "AGENTS.md"
   assert_link ".config/gh-dash/config.yml"
   assert_link ".config/git/config"
+  assert_link ".config/hypr/autostart.lua"
+  assert_link ".config/hypr/bindings.lua"
+  assert_link ".config/hypr/hyprland.lua"
+  assert_link ".config/hypr/input.lua"
+  assert_link ".config/hypr/looknfeel.lua"
+  assert_link ".config/hypr/monitors.lua"
+  assert_link ".config/hypr/windows.lua"
   assert_link ".config/mise/config.toml"
+  assert_link ".config/wezterm/wezterm.lua"
 }
 
 # A fresh installation supports spaces, preserves machine-local files, and
@@ -166,6 +174,21 @@ fi
   fail "installer made changes before reporting a conflict"
 grep -q 'refusing to overwrite' "$temporary_root/conflict.out" || \
   fail "installer did not explain the file conflict"
+
+# A conflict in a new payload is detected before any other new payload is installed.
+new_payload_conflict_home="$temporary_root/new payload conflict home"
+mkdir -p "$new_payload_conflict_home/.config/wezterm"
+printf '%s\n' 'keep my terminal config' > \
+  "$new_payload_conflict_home/.config/wezterm/wezterm.lua"
+if "$repo_root/install.sh" "$new_payload_conflict_home" > \
+  "$temporary_root/new-payload-conflict.out" 2>&1; then
+  fail "installation unexpectedly overwrote the WezTerm configuration"
+fi
+[ "$(cat "$new_payload_conflict_home/.config/wezterm/wezterm.lua")" = \
+  'keep my terminal config' ] || fail "existing WezTerm configuration was changed"
+assert_no_path "$new_payload_conflict_home/.config/hypr/hyprland.lua"
+grep -q 'refusing to overwrite' "$temporary_root/new-payload-conflict.out" || \
+  fail "installer did not explain the WezTerm conflict"
 
 # An existing global agent instruction file is preserved without partial changes.
 agents_conflict_home="$temporary_root/agents conflict home"
