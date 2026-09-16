@@ -63,41 +63,56 @@ assert_installed_payload
 assert_no_path "$test_home/.tmux.conf"
 assert_no_path "$test_home/.config/tmux/tmux.conf"
 
-# In an isolated XDG environment, the installed preference and desktop entry
-# select WezTerm and preserve every argument used by Omarchy. The fake binary
-# records the wrapper's final argv, so no GUI is opened.
+# In an isolated XDG environment, the installed preference selects Ghostty by
+# its actual desktop entry identifier. A minimal copy of that system entry
+# keeps this test independent of packages installed on the test host.
 fake_bin="$temporary_root/fake bin"
-mkdir -p "$fake_bin"
+ghostty_data="$temporary_root/ghostty data"
+mkdir -p "$fake_bin" "$ghostty_data/applications" "$temporary_root/cache"
+cat > "$fake_bin/ghostty" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$@"
+EOF
 cat > "$fake_bin/wezterm" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$@"
 EOF
-chmod +x "$fake_bin/wezterm"
+chmod +x "$fake_bin/ghostty" "$fake_bin/wezterm"
+cat > "$ghostty_data/applications/com.mitchellh.ghostty.desktop" <<'EOF'
+[Desktop Entry]
+Name=Ghostty
+Type=Application
+TryExec=ghostty
+Exec=ghostty
+X-TerminalArgExec=-e
+X-TerminalArgTitle=--title=
+X-TerminalArgAppId=--class=
+X-TerminalArgDir=--working-directory=
+EOF
 xdg_env=(
   env
   "HOME=$test_home"
   "XDG_CONFIG_HOME=$test_home/.config"
   "XDG_DATA_HOME=$test_home/.local/share"
-  "XDG_DATA_DIRS=$temporary_root/empty-data"
+  "XDG_DATA_DIRS=$ghostty_data"
   "XDG_CACHE_HOME=$temporary_root/cache"
   "PATH=$repo_root/tests/fixtures:$fake_bin:$test_home/.local/bin:/usr/bin:/bin"
 )
-mkdir -p "$temporary_root/empty-data" "$temporary_root/cache"
 selected_terminal="$("${xdg_env[@]}" xdg-terminal-exec --print-id)"
-[ "$selected_terminal" = 'org.wezfurlong.wezterm.desktop' ] || \
-  fail "xdg-terminal-exec selected $selected_terminal instead of WezTerm"
+[ "$selected_terminal" = 'com.mitchellh.ghostty.desktop' ] || \
+  fail "xdg-terminal-exec selected $selected_terminal instead of Ghostty"
 
 printed_command="$("${xdg_env[@]}" xdg-terminal-exec --print-cmd \
   --dir='/tmp/project with spaces' --app-id=TUI.float --title='Test title' \
   -e printf '%s' 'command argument')"
 expected_command="$(printf '%s\n' \
-  wezterm-xdg-terminal-exec \
+  ghostty \
   --class TUI.float \
   --title 'Test title' \
-  --cwd '/tmp/project with spaces' \
-  -- printf '%s' 'command argument')"
+  --working-directory '/tmp/project with spaces' \
+  -e printf '%s' 'command argument')"
 [ "$printed_command" = "$expected_command" ] || \
-  fail "xdg-terminal-exec did not preserve WezTerm launch arguments"
+  fail "xdg-terminal-exec did not preserve Ghostty launch arguments"
 
 wrapped_command="$(PATH="$fake_bin:/usr/bin:/bin" \
   "$test_home/.local/bin/wezterm-xdg-terminal-exec" \
