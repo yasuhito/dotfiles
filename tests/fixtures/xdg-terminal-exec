@@ -35,7 +35,9 @@ exec_arg=""
 app_id_arg=""
 title_arg=""
 dir_arg=""
-while IFS='=' read -r key value; do
+while IFS= read -r line || [ -n "$line" ]; do
+  key="${line%%=*}"
+  value="${line#*=}"
   case "$key" in
     Exec) exec_value="$value" ;;
     TryExec) try_exec="$value" ;;

@@ -64,8 +64,11 @@ assert_no_path "$test_home/.tmux.conf"
 assert_no_path "$test_home/.config/tmux/tmux.conf"
 
 # In an isolated XDG environment, the installed preference selects Ghostty by
-# its actual desktop entry identifier. A minimal copy of that system entry
-# keeps this test independent of packages installed on the test host.
+# its actual desktop entry identifier. The desktop entry below is a deliberately
+# simplified behavioral fixture, not a literal copy of the packaged entry: it
+# keeps the same desktop ID and X-TerminalArg metadata (including the trailing
+# "=" that makes xdg-terminal-exec join option and value into one argument), but
+# uses a single-word Exec so the test stays independent of the host's packages.
 fake_bin="$temporary_root/fake bin"
 ghostty_data="$temporary_root/ghostty data"
 mkdir -p "$fake_bin" "$ghostty_data/applications" "$temporary_root/cache"
@@ -107,9 +110,9 @@ printed_command="$("${xdg_env[@]}" xdg-terminal-exec --print-cmd \
   -e printf '%s' 'command argument')"
 expected_command="$(printf '%s\n' \
   ghostty \
-  --class TUI.float \
-  --title 'Test title' \
-  --working-directory '/tmp/project with spaces' \
+  --class=TUI.float \
+  --title='Test title' \
+  --working-directory='/tmp/project with spaces' \
   -e printf '%s' 'command argument')"
 [ "$printed_command" = "$expected_command" ] || \
   fail "xdg-terminal-exec did not preserve Ghostty launch arguments"
