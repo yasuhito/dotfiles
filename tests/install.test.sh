@@ -80,7 +80,7 @@ xdg_env=(
   "XDG_DATA_HOME=$test_home/.local/share"
   "XDG_DATA_DIRS=$temporary_root/empty-data"
   "XDG_CACHE_HOME=$temporary_root/cache"
-  "PATH=$fake_bin:$test_home/.local/bin:$PATH"
+  "PATH=$repo_root/tests/fixtures:$fake_bin:$test_home/.local/bin:/usr/bin:/bin"
 )
 mkdir -p "$temporary_root/empty-data" "$temporary_root/cache"
 selected_terminal="$("${xdg_env[@]}" xdg-terminal-exec --print-id)"
@@ -99,7 +99,7 @@ expected_command="$(printf '%s\n' \
 [ "$printed_command" = "$expected_command" ] || \
   fail "xdg-terminal-exec did not preserve WezTerm launch arguments"
 
-wrapped_command="$(PATH="$fake_bin:$PATH" \
+wrapped_command="$(PATH="$fake_bin:/usr/bin:/bin" \
   "$test_home/.local/bin/wezterm-xdg-terminal-exec" \
   --class TUI.float --title 'Test title' --cwd '/tmp/project with spaces' \
   -- printf '%s' 'command argument')"
@@ -112,7 +112,7 @@ expected_wrapped="$(printf '%s\n' \
 [ "$wrapped_command" = "$expected_wrapped" ] || \
   fail "WezTerm wrapper did not preserve class, title, directory, and command"
 
-normal_launch="$(PATH="$fake_bin:$PATH" \
+normal_launch="$(PATH="$fake_bin:/usr/bin:/bin" \
   "$test_home/.local/bin/wezterm-xdg-terminal-exec")"
 [ "$normal_launch" = 'start' ] || fail "normal WezTerm launch has unexpected arguments"
 
