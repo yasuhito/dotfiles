@@ -32,6 +32,7 @@ assert_installed_payload() {
   assert_link ".config/git/config"
   assert_link ".config/ghostty/config"
   assert_link ".config/hypr/autostart.lua"
+  assert_link ".config/hypr/bindings.conf"
   assert_link ".config/hypr/bindings.lua"
   assert_link ".config/hypr/hyprland.lua"
   assert_link ".config/hypr/input.lua"
@@ -63,6 +64,14 @@ assert_no_path "$test_home/.config/tmux/tmux.conf"
 assert_installed_payload
 assert_no_path "$test_home/.tmux.conf"
 assert_no_path "$test_home/.config/tmux/tmux.conf"
+
+# A byte-identical regular file is safely adopted as a managed link.
+test_home="$temporary_root/identical bindings home"
+mkdir -p "$test_home/.config/hypr"
+cp "$repo_root/home/.config/hypr/bindings.conf" \
+  "$test_home/.config/hypr/bindings.conf"
+"$repo_root/install.sh" "$test_home"
+assert_installed_payload
 
 # In an isolated XDG environment, the installed preference selects Ghostty by
 # its actual desktop entry identifier. The desktop entry below is a deliberately
@@ -266,6 +275,21 @@ fi
   fail "installer made changes before reporting the Ghostty conflict"
 grep -q 'refusing to overwrite' "$temporary_root/ghostty-conflict.out" || \
   fail "installer did not explain the Ghostty conflict"
+
+# A different bindings.conf blocks the entire installation and is preserved.
+bindings_conflict_home="$temporary_root/bindings conflict home"
+mkdir -p "$bindings_conflict_home/.config/hypr"
+printf '%s\n' 'keep my bindings' > \
+  "$bindings_conflict_home/.config/hypr/bindings.conf"
+if "$repo_root/install.sh" "$bindings_conflict_home" > \
+  "$temporary_root/bindings-conflict.out" 2>&1; then
+  fail "installation unexpectedly overwrote bindings.conf"
+fi
+[ "$(cat "$bindings_conflict_home/.config/hypr/bindings.conf")" = \
+  'keep my bindings' ] || fail "existing bindings.conf was changed"
+assert_no_path "$bindings_conflict_home/.config/gh-dash/config.yml"
+grep -q 'refusing to overwrite' "$temporary_root/bindings-conflict.out" || \
+  fail "installer did not explain the bindings.conf conflict"
 
 # A conflict in a new payload is detected before any other new payload is installed.
 new_payload_conflict_home="$temporary_root/new payload conflict home"
