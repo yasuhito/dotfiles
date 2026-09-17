@@ -31,3 +31,7 @@
 -- Volume controls.
 o.bind("SUPER + Page_Up", "Volume up", "omarchy-audio-output-volume raise", { locked = true, repeating = true })
 o.bind("SUPER + Page_Down", "Volume down", "omarchy-audio-output-volume lower", { locked = true, repeating = true })
+
+-- Toggle dictation with F9 instead of requiring push-to-talk.
+hl.unbind("F9")
+o.bind("F9", "Toggle dictation", "voxtype record toggle")
