@@ -142,6 +142,10 @@ while IFS= read -r -d '' tracked_path; do
     if is_managed_link "$destination" "$relative_path"; then
       continue
     fi
+    if [ -f "$destination" ] && [ ! -L "$destination" ] && \
+      cmp -s "$payload_root/$relative_path" "$destination"; then
+      continue
+    fi
 
     echo "conflict: refusing to overwrite $destination" >&2
     has_conflict=1
@@ -183,8 +187,9 @@ while IFS= read -r -d '' tracked_path; do
   if [ -L "$destination" ] && [ "$(readlink "$destination")" = "$source_path" ]; then
     continue
   fi
-  if [ -L "$destination" ]; then
-    rm "$destination" # A preflight-approved managed link from a checkout.
+  if [ -L "$destination" ] || [ -f "$destination" ]; then
+    # Preflight approved either a managed link or a byte-identical regular file.
+    rm "$destination"
   fi
   ln -s "$source_path" "$destination"
 done < <(tracked_payloads)
